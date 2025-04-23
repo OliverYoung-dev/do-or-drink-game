@@ -104,9 +104,29 @@ export default function GameBoard({ playerNames, themeType }) {
         </h2>
   
         {/* Dare Card */}
-        <div className="min-h-[150px] bg-gray-100 dark:bg-gray-800 p-6 rounded-2xl shadow-md mb-6 text-xl font-medium flex items-center justify-center transition-all duration-500">
-          {currentDare || "Click below to get a dare!"}
-        </div>
+        <div
+  className={`
+    min-h-[150px] text-xl font-medium flex items-center justify-center
+    p-6 mb-6 transition-all duration-500 rounded-2xl shadow-xl border
+    bg-white/20 dark:bg-gray-800/40 backdrop-blur-md
+    border-purple-300 dark:border-purple-700
+    text-gray-800 dark:text-white
+    dare-card ${currentDare ? "dare-card-reveal" : ""}
+  `}
+>
+  {currentDare ? (
+    <span className="animate-fadeIn">
+      🎉 {currentDare}
+    </span>
+  ) : (
+    "Click below to get a dare!"
+  )}
+</div>
+  
+        {/* Remaining Dares */}
+        <p className="text-lg font-semibold mb-4">
+          Remaining Dares: {remainingDares.length}
+        </p>
   
         {/* Get Dare Button */}
         {!gameOver && (
