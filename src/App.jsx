@@ -6,6 +6,7 @@ import { registerSW } from "virtual:pwa-register";
 
 registerSW({ immediate: true });
 
+
 function App() {
   const [themeMode, setThemeMode] = useState("light");
   const [themeType, setThemeType] = useState("All");

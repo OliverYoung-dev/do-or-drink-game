@@ -18,6 +18,34 @@ export default function GameBoard({ playerNames, themeType }) {
     }
   }, []);
 
+  const isIos = () => {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    return /iphone|ipad|ipod/.test(userAgent);
+  };
+  
+  const isInStandaloneMode = () =>
+    "standalone" in window.navigator && window.navigator.standalone;
+  
+  const [showIosPopup, setShowIosPopup] = useState(false);
+  
+  useEffect(() => {
+    if (isIos() && !isInStandaloneMode()) {
+      setShowIosPopup(true);
+    }
+  }, []);
+  
+  useEffect(() => {
+    if (showIosPopup) {
+      const closePopup = () => {
+        setShowIosPopup(false);
+      };
+      window.addEventListener("beforeinstallprompt", closePopup);
+      return () => {
+        window.removeEventListener("beforeinstallprompt", closePopup);
+      };
+    }
+  })  
+
   // Load voices (especially for Chrome)
   useEffect(() => {
     const loadVoices = () => {
@@ -122,6 +150,21 @@ export default function GameBoard({ playerNames, themeType }) {
     "Click below to get a dare!"
   )}
 </div>
+{showIosPopup && (
+  <div className="fixed bottom-4 left-4 right-4 z-50 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 p-4 rounded-xl shadow-xl flex items-center gap-3">
+    <span role="img" aria-label="install" className="text-xl">📲</span>
+    <div className="text-sm text-gray-800 dark:text-white">
+      Install this app: tap <strong>Share</strong> then <strong>“Add to Home Screen”</strong>.
+    </div>
+    <button
+      onClick={() => setShowIosPopup(false)}
+      className="ml-auto text-gray-500 hover:text-gray-800 dark:hover:text-white text-sm"
+    >
+      ✖
+    </button>
+  </div>
+)}
+
   
         {/* Remaining Dares */}
         <p className="text-lg font-semibold mb-4">
