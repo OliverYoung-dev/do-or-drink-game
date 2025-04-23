@@ -74,7 +74,7 @@ export default function GameBoard({ playerNames, themeType }) {
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.pitch = 1;
-    utterance.rate = 0.95;
+    utterance.rate = 0.75;
 
     // Find a soft female voice
     const preferred = voices.find(
@@ -110,7 +110,7 @@ export default function GameBoard({ playerNames, themeType }) {
 
     const playerName = playerNames[nextPlayer];
     speak(`It's ${playerName}'s turn`);
-    setTimeout(() => speak(dare.text), 800);
+    setTimeout(() => speak(dare.text), 1500);
   };
 
   // Restart game
