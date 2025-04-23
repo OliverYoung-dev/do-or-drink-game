@@ -17,7 +17,7 @@ function App() {
     <div className={themeMode === "dark" ? "bg-gray-900 text-white min-h-screen" : "bg-white text-black min-h-screen"}>
       {/* Theme Toggle */}
       <button onClick={() => setThemeMode(themeMode === "light" ? "dark" : "light")} className="fixed top-4 right-4 p-2 bg-gray-800 text-white rounded-full">
-        Switch to {themeMode === "light" ? "Dark" : "Light"} Mode
+         {themeMode === "light" ? "Dark" : "Light"} Mode
       </button>  
 
       {/* Show Landing if playerNames is empty, otherwise PlayerForm */}
