@@ -81,13 +81,13 @@ function App() {
       </button>
 
       {/* Android PWA Install Button */}
-      {showInstallBtn && (
-        <button
-          onClick={handleInstallClick}
-          className="fixed top-4 left-4 px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 z-50"
-        >
-          📲 Install App
-        </button>
+      {showInstallBtn && !isIos() && (
+  <button
+    onClick={handleInstallClick}
+    className="fixed top-4 left-4 px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 z-50"
+  >
+    📲 Install App
+  </button>
       )}
 
       {/* iOS Install Banner */}
