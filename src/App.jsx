@@ -1,12 +1,11 @@
-
 import { useState, useEffect } from "react";
 import Landing from "./components/Landing";
 import PlayerForm from "./components/PlayerForm";
 import GameBoard from "./components/GameBoard";
 import { registerSW } from "virtual:pwa-register";
+import { Analytics } from "@vercel/analytics/react";
 
 registerSW({ immediate: true });
-
 
 function App() {
   const [themeMode, setThemeMode] = useState("light");
@@ -17,16 +16,30 @@ function App() {
 
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
+  const [showIosPopup, setShowIosPopup] = useState(false);
 
-  // Capture install prompt
+  // Detect iOS Safari
+  const isIos = () => {
+    const ua = window.navigator.userAgent.toLowerCase();
+    return /iphone|ipad|ipod/.test(ua);
+  };
+
+  const isInStandaloneMode = () =>
+    "standalone" in window.navigator && window.navigator.standalone;
+
   useEffect(() => {
+    // Detect Android-style install prompt
     window.addEventListener("beforeinstallprompt", (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setShowInstallBtn(true);
     });
 
-    // Cleanup event listener
+    // Detect iOS install guide
+    if (isIos() && !isInStandaloneMode()) {
+      setShowIosPopup(true);
+    }
+
     return () => {
       window.removeEventListener("beforeinstallprompt", () => {});
     };
@@ -67,7 +80,7 @@ function App() {
         {themeMode === "light" ? "Dark" : "Light"} Mode
       </button>
 
-      {/* Install App Button */}
+      {/* Android PWA Install Button */}
       {showInstallBtn && (
         <button
           onClick={handleInstallClick}
@@ -77,7 +90,23 @@ function App() {
         </button>
       )}
 
-      {/* Conditional Screens */}
+      {/* iOS Install Banner */}
+      {showIosPopup && (
+        <div className="fixed bottom-4 left-4 right-4 z-50 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 p-4 rounded-xl shadow-md flex items-center gap-3 animate-slideUp">
+          <span className="text-xl">📱</span>
+          <div className="text-sm text-gray-800 dark:text-gray-100">
+            Install this app: tap <strong>Share</strong> then <strong>“Add to Home Screen”</strong>
+          </div>
+          <button
+            onClick={() => setShowIosPopup(false)}
+            className="ml-auto text-gray-500 hover:text-gray-800 dark:hover:text-white text-sm"
+          >
+            ✖
+          </button>
+        </div>
+      )}
+
+      {/* Screens */}
       {!isReadyForNames ? (
         <Landing
           setTheme={setThemeMode}
@@ -100,6 +129,8 @@ function App() {
       ) : (
         <GameBoard playerNames={playerNames} themeType={themeType} />
       )}
+
+      <Analytics />
     </div>
   );
 }
