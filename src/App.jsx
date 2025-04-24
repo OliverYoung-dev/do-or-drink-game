@@ -94,7 +94,7 @@ function App() {
         {themeMode === "light" ? "Dark" : "Light"} Mode
       </button> */}
 
-      {/* Android PWA Install Button */}
+      {/* Android PWA Install Button */}  
       {showInstallBtn && !isIos() && (
         <button
           onClick={handleInstallClick}
