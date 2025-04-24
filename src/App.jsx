@@ -2,18 +2,22 @@ import { useState, useEffect } from "react";
 import Landing from "./components/Landing";
 import PlayerForm from "./components/PlayerForm";
 import GameBoard from "./components/GameBoard";
+import LoadingScreen from "./components/LoadingScreen";
 import { registerSW } from "virtual:pwa-register";
 import { Analytics } from "@vercel/analytics/react";
 
 registerSW({ immediate: true });
 
 function App() {
-  const [themeMode, setThemeMode] = useState("light");
+  const getSystemTheme = () =>
+    window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+
+  const [themeMode, setThemeMode] = useState(getSystemTheme());
   const [themeType, setThemeType] = useState("All");
   const [playerCount, setPlayerCount] = useState(2);
   const [playerNames, setPlayerNames] = useState([]);
   const [gameStarted, setGameStarted] = useState(false);
-
+  const [showLoader, setShowLoader] = useState(true);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
   const [showIosPopup, setShowIosPopup] = useState(false);
@@ -28,20 +32,29 @@ function App() {
     "standalone" in window.navigator && window.navigator.standalone;
 
   useEffect(() => {
-    // Detect Android-style install prompt
+    // System theme listener
+    const themeMedia = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleThemeChange = (e) => setThemeMode(e.matches ? "dark" : "light");
+    themeMedia.addEventListener("change", handleThemeChange);
+
+    // Android PWA prompt
     window.addEventListener("beforeinstallprompt", (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setShowInstallBtn(true);
     });
 
-    // Detect iOS install guide
+    // iOS install banner
     if (isIos() && !isInStandaloneMode()) {
       setShowIosPopup(true);
     }
 
+    const timer = setTimeout(() => setShowLoader(false), 4000);
+
     return () => {
+      clearTimeout(timer);
       window.removeEventListener("beforeinstallprompt", () => {});
+      themeMedia.removeEventListener("change", handleThemeChange);
     };
   }, []);
 
@@ -61,6 +74,7 @@ function App() {
   };
 
   const isReadyForNames = playerNames.length > 0;
+  if (showLoader) return <LoadingScreen />;
 
   return (
     <div
@@ -71,23 +85,23 @@ function App() {
       }
     >
       {/* Theme Toggle */}
-      <button
+      {/* <button
         onClick={() =>
           setThemeMode(themeMode === "light" ? "dark" : "light")
         }
         className="fixed top-4 right-4 p-2 bg-gray-800 text-white rounded-full z-50"
       >
         {themeMode === "light" ? "Dark" : "Light"} Mode
-      </button>
+      </button> */}
 
       {/* Android PWA Install Button */}
       {showInstallBtn && !isIos() && (
-  <button
-    onClick={handleInstallClick}
-    className="fixed top-4 left-4 px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 z-50"
-  >
-    📲 Install App
-  </button>
+        <button
+          onClick={handleInstallClick}
+          className="fixed top-4 left-4 px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 z-50"
+        >
+          📲 Install App
+        </button>
       )}
 
       {/* iOS Install Banner */}
@@ -125,6 +139,8 @@ function App() {
           playerNames={playerNames}
           setPlayerNames={setPlayerNames}
           onStart={() => setGameStarted(true)}
+          onBack={() => setPlayerNames([])}
+          theme={themeMode}
         />
       ) : (
         <GameBoard playerNames={playerNames} themeType={themeType} />
