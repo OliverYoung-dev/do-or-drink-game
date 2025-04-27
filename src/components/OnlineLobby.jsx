@@ -10,36 +10,46 @@ export default function OnlineLobby({ onBack, theme }) {
   const [gameStarted, setGameStarted] = useState(false);
   const [players, setPlayers] = useState([]);
   const [socket, setSocket] = useState(null);
+  const [isHost, setIsHost] = useState(false);
 
-  
   useEffect(() => {
-    const socket = io("https://do-or-drink-game.onrender.com"); // Use the correct URL
-    setSocket(socket);
+    const socketInstance = io("https://do-or-drink-game.onrender.com");
+    setSocket(socketInstance);
 
-    socket.on("room-created", (roomCode) => {
+    socketInstance.on("room-created", (roomCode) => {
       console.log(`Room ${roomCode} created`);
     });
 
-    socket.on("player-joined", (players) => {
+    socketInstance.on("player-joined", (players) => {
       setPlayers(players);
     });
 
-    socket.on("start-game", () => {
+    socketInstance.on("start-game", () => {
       setGameStarted(true);
     });
 
-    socket.on("error", (message) => {
+    socketInstance.on("error", (message) => {
       alert(message);
     });
 
-    return () => socket.disconnect(); // Cleanup when component unmounts
+    return () => socketInstance.disconnect();
   }, []);
+
+  const getDeviceName = () => {
+    const ua = navigator.userAgent;
+    if (/mobile/i.test(ua)) return "📱 Mobile User";
+    if (/tablet/i.test(ua)) return "📱 Tablet User";
+    if (/Macintosh|Windows|Linux/i.test(ua)) return "💻 Desktop User";
+    return "🌐 Unknown Device";
+  };
 
   const handleCreateRoom = () => {
     const generatedCode = Math.random().toString(36).substring(2, 7).toUpperCase();
     setRoomCode(generatedCode);
     setMode("create");
+    setIsHost(true);
     socket.emit("create-room", generatedCode);
+    socket.emit("join-room", generatedCode, getDeviceName());
   };
 
   const handleCopyCode = () => {
@@ -53,9 +63,16 @@ export default function OnlineLobby({ onBack, theme }) {
       alert("Please enter a valid room code.");
       return;
     }
-
-    socket.emit("join-room", roomCode);
     setMode("join");
+    socket.emit("join-room", roomCode, getDeviceName());
+  };
+
+  const handleStartGame = () => {
+    if (players.length < 2) {
+      alert("At least 2 players are needed to start the game!");
+      return;
+    }
+    socket.emit("start-game", roomCode);
   };
 
   if (gameStarted) {
@@ -63,16 +80,17 @@ export default function OnlineLobby({ onBack, theme }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-row items-start justify-center px-6 py-12 bg-gradient-to-br from-indigo-900 to-purple-700 text-white dark:from-black dark:to-gray-900 transition-all relative">
+    <div className="min-h-screen flex flex-col md:flex-row items-start justify-center px-4 py-8 bg-gradient-to-br from-indigo-900 to-purple-700 text-white dark:from-black dark:to-gray-900 transition-all relative">
+      
       {/* Sidebar Section */}
-      <div className="w-1/4 min-h-screen bg-black bg-opacity-70 p-6 rounded-xl shadow-lg space-y-6 flex flex-col">
-        <h2 className="text-2xl font-semibold text-center text-white">Players in Room</h2>
-        <div className="flex flex-col gap-4 overflow-y-auto h-[400px]">
+      <div className="w-full md:w-1/4 min-h-[300px] md:min-h-screen bg-black bg-opacity-70 p-6 rounded-xl shadow-lg space-y-6 flex flex-col mb-6 md:mb-0">
+        <h2 className="text-2xl font-semibold text-center">Players in Room</h2>
+        <div className="flex flex-col gap-4 overflow-y-auto max-h-80 md:max-h-[500px]">
           {players.length > 0 ? (
             players.map((player, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between bg-purple-700 text-white p-4 rounded-xl shadow-md hover:bg-purple-600 transition-all"
+                className="flex items-center justify-between bg-purple-700 p-4 rounded-xl shadow-md hover:bg-purple-600 transition-all"
               >
                 <span>{player}</span>
                 <span className="text-xs bg-gray-500 px-2 py-1 rounded-full">Player {index + 1}</span>
@@ -82,13 +100,23 @@ export default function OnlineLobby({ onBack, theme }) {
             <div className="text-center text-gray-400">No players yet</div>
           )}
         </div>
+
+        {/* Show Start Game Button for Host */}
+        {isHost && players.length > 1 && (
+          <button
+            onClick={handleStartGame}
+            className="w-full mt-4 bg-green-500 hover:bg-green-400 text-black font-bold py-3 rounded-lg transition-all"
+          >
+            🚀 Start Game
+          </button>
+        )}
       </div>
 
       {/* Main Content Section */}
-      <div className="flex flex-col items-center justify-center w-3/4 px-6">
+      <div className="flex flex-col items-center justify-center w-full md:w-3/4 px-6">
         <button
           onClick={onBack}
-          className="absolute top-6 left-6 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-full text-sm font-semibold shadow-lg transition"
+          className="absolute top-4 left-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-full text-sm font-semibold shadow-lg transition"
         >
           ← Back
         </button>
