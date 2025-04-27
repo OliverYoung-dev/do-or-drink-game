@@ -11,6 +11,7 @@ export default function OnlineLobby({ onBack, theme }) {
   const [players, setPlayers] = useState([]);
   const [socket, setSocket] = useState(null);
 
+  
   useEffect(() => {
     const socket = io("https://do-or-drink-game.onrender.com"); // Use the correct URL
     setSocket(socket);
