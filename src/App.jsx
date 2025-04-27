@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import Landing from "./components/Landing";
 import PlayerForm from "./components/PlayerForm";
 import GameBoard from "./components/GameBoard";
+import OnlineLobby from "./components/OnlineLobby"; // 👈 new!
+import OnlineGameBoard from "./components/OnlineGameBoard"; // 👈 new!
 import LoadingScreen from "./components/LoadingScreen";
 import { registerSW } from "virtual:pwa-register";
 import { Analytics } from "@vercel/analytics/react";
@@ -18,33 +20,29 @@ function App() {
   const [playerNames, setPlayerNames] = useState([]);
   const [gameStarted, setGameStarted] = useState(false);
   const [showLoader, setShowLoader] = useState(true);
+  
+  const [gameMode, setGameMode] = useState(null); // 👈 'local' or 'online'
+  const [roomCode, setRoomCode] = useState(null); // 👈 for online
+  const [onlinePlayers, setOnlinePlayers] = useState([]); // 👈 for online players
+
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
   const [showIosPopup, setShowIosPopup] = useState(false);
 
-  // Detect iOS Safari
-  const isIos = () => {
-    const ua = window.navigator.userAgent.toLowerCase();
-    return /iphone|ipad|ipod/.test(ua);
-  };
-
-  const isInStandaloneMode = () =>
-    "standalone" in window.navigator && window.navigator.standalone;
+  const isIos = () => /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+  const isInStandaloneMode = () => "standalone" in window.navigator && window.navigator.standalone;
 
   useEffect(() => {
-    // System theme listener
     const themeMedia = window.matchMedia("(prefers-color-scheme: dark)");
     const handleThemeChange = (e) => setThemeMode(e.matches ? "dark" : "light");
     themeMedia.addEventListener("change", handleThemeChange);
 
-    // Android PWA prompt
     window.addEventListener("beforeinstallprompt", (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setShowInstallBtn(true);
     });
 
-    // iOS install banner
     if (isIos() && !isInStandaloneMode()) {
       setShowIosPopup(true);
     }
@@ -53,7 +51,6 @@ function App() {
 
     return () => {
       clearTimeout(timer);
-      window.removeEventListener("beforeinstallprompt", () => {});
       themeMedia.removeEventListener("change", handleThemeChange);
     };
   }, []);
@@ -61,40 +58,30 @@ function App() {
   const handleInstallClick = () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
-      deferredPrompt.userChoice.then((choiceResult) => {
-        if (choiceResult.outcome === "accepted") {
-          console.log("User accepted the install prompt");
-        } else {
-          console.log("User dismissed the install prompt");
-        }
+      deferredPrompt.userChoice.then(() => {
         setDeferredPrompt(null);
         setShowInstallBtn(false);
       });
     }
   };
 
-  const isReadyForNames = playerNames.length > 0;
+  const resetGame = () => {
+    setGameMode(null);
+    setPlayerNames([]);
+    setOnlinePlayers([]);
+    setRoomCode(null);
+    setGameStarted(false);
+  };
+
   if (showLoader) return <LoadingScreen />;
 
   return (
     <div
-      className={
-        themeMode === "dark"
-          ? "bg-gray-900 text-white min-h-screen"
-          : "bg-white text-black min-h-screen"
-      }
+      className={themeMode === "dark" 
+        ? "bg-gray-900 text-white min-h-screen" 
+        : "bg-white text-black min-h-screen"}
     >
-      {/* Theme Toggle */}
-      {/* <button
-        onClick={() =>
-          setThemeMode(themeMode === "light" ? "dark" : "light")
-        }
-        className="fixed top-4 right-4 p-2 bg-gray-800 text-white rounded-full z-50"
-      >
-        {themeMode === "light" ? "Dark" : "Light"} Mode
-      </button> */}
-
-      {/* Android PWA Install Button */}  
+      {/* Android Install Button */}
       {showInstallBtn && !isIos() && (
         <button
           onClick={handleInstallClick}
@@ -120,8 +107,8 @@ function App() {
         </div>
       )}
 
-      {/* Screens */}
-      {!isReadyForNames ? (
+      {/* GAME SCREENS */}
+      {!gameMode ? (
         <Landing
           setTheme={setThemeMode}
           theme={themeMode}
@@ -129,22 +116,45 @@ function App() {
           setThemeType={setThemeType}
           playerCount={playerCount}
           setPlayerCount={setPlayerCount}
-          onContinue={(count) => {
+          onLocalPlay={(count) => {
+            setGameMode("local");
             setPlayerNames(new Array(count).fill(""));
             setGameStarted(false);
           }}
+          onOnlinePlay={() => {
+            setGameMode("online");
+          }}
         />
-      ) : !gameStarted ? (
-        <PlayerForm
-          playerNames={playerNames}
-          setPlayerNames={setPlayerNames}
-          onStart={() => setGameStarted(true)}
-          onBack={() => setPlayerNames([])}
-          theme={themeMode}
-        />
-      ) : (
-        <GameBoard playerNames={playerNames} themeType={themeType} />
-      )}
+      ) : gameMode === "local" ? (
+        !playerNames.length ? (
+          <Landing /* fallback */ />
+        ) : !gameStarted ? (
+          <PlayerForm
+            playerNames={playerNames}
+            setPlayerNames={setPlayerNames}
+            onStart={() => setGameStarted(true)}
+            onBack={() => setPlayerNames([])}
+            theme={themeMode}
+          />
+        ) : (
+          <GameBoard playerNames={playerNames} themeType={themeType} />
+        )
+      ) : gameMode === "online" ? (
+        !roomCode ? (
+          <OnlineLobby
+            setRoomCode={setRoomCode}
+            setOnlinePlayers={setOnlinePlayers}
+            theme={themeMode}
+            onBack={() => setGameMode(null)}
+          />
+        ) : (
+          <OnlineGameBoard
+            players={onlinePlayers}
+            roomCode={roomCode}
+            onExit={resetGame}
+          />
+        )
+      ) : null}
 
       <Analytics />
     </div>
