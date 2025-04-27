@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import Landing from "./components/Landing";
 import PlayerForm from "./components/PlayerForm";
 import GameBoard from "./components/GameBoard";
-import OnlineLobby from "./components/OnlineLobby"; // 👈 new!
-import OnlineGameBoard from "./components/OnlineGameBoard"; // 👈 new!
+import OnlineLobby from "./components/OnlineLobby"; 
+import OnlineGameBoard from "./components/OnlineGameBoard"; 
 import LoadingScreen from "./components/LoadingScreen";
 import { registerSW } from "virtual:pwa-register";
 import { Analytics } from "@vercel/analytics/react";
@@ -85,7 +85,7 @@ function App() {
       {showInstallBtn && !isIos() && (
         <button
           onClick={handleInstallClick}
-          className="fixed top-4 left-4 px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 z-50"
+          className="fixed top-4 right-4 px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 z-50"
         >
           📲 Install App
         </button>
